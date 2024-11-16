@@ -72,12 +72,12 @@ This command generates the `sequelizer` executable.
 
 **Input (`input.jpa`)**:
 ```jpa
-SELECT u FROM User u WHERE u.age > :age AND u.city = :city
+findBy id (id = 2)
 ```
 
 **Output (`output.sql`)**:
 ```sql
-SELECT * FROM User u WHERE u.age > ? AND u.city = ?
+SELECT * FROM table WHERE id = 2
 ```
 
 ---
