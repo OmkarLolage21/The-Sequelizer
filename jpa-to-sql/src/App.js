@@ -9,7 +9,7 @@ const JPAtoSQLConverter = () => {
         e.preventDefault();
 
         try {
-          const response = await axios.post('http://192.168.25.201:5000/convertQuery', { jpaQuery });
+          const response = await axios.post('localhost:8080/convertQuery', { jpaQuery });
             setSqlQuery(response.data.sqlQuery); 
             alert(response.data.sqlQuery); // Display the SQL query
         } catch (error) {
