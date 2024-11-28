@@ -12,15 +12,17 @@ extern int yylex();
     int num;
 }
 
-%token <str> IDENTIFIER
-%token <str> STRING
-%token <num> NUMBER
-%token FINDALL FINDBY FINDALLBY FINDFIRSTBY FINDLASTBY FINDDISTINCTBY FINDTOPBY AND OR
-%token LPAREN RPAREN COMMA EQUALS NOTEQUAL GREATER LESS GREATEREQ LESSEQ
-%token BETWEEN LIKE NOTLIKE ISNULL ISNOTNULL TRUEVAL FALSEVAL STARTINGWITH
-%token ENDINGWITH CONTAINING NOT IGNORECASE
+    %token<str> IDENTIFIER 
+    %token<str> STRING 
+    %token<num> NUMBER % token FINDALL FINDBY FINDALLBY FINDFIRSTBY FINDLASTBY FINDDISTINCTBY FINDTOPBY AND OR 
+    %token LPAREN RPAREN COMMA EQUALS NOTEQUAL GREATER LESS GREATEREQ LESSEQ 
+    %token BETWEEN LIKE NOTLIKE ISNULL ISNOTNULL TRUEVAL FALSEVAL STARTINGWITH 
+    %token ENDINGWITH CONTAINING NOT IGNORECASE AFTER BEFORE IN NOTIN ORDERBY FINDBYLASTNAMEANDFIRSTNAME FINDBYLASTNAMEORFIRSTNAME 
+    %token FINDDISTINCTBYLASTNAMEANDFIRSTNAME FINDBYSTARTDATEBETWEEN FINDBYSTARTDATEAFTER FINDBYSTARTDATEBEFORE FINDBYFIRSTNAMELIKE 
+    %token FINDBYFIRSTNAMENOTLIKE FINDBYFIRSTNAMESTARTINGWITH FINDBYFIRSTNAMEENDINGWITH FINDBYFIRSTNAMECONTAINING FINDBYAGEORDERBYLASTNAMEDESC 
+    %token FINDBYLASTNAMENOT FINDBYAGENOTIN FINDBYACTIVETRUE FINDBYACTIVEFALSE FINDBYFIRSTNAMEIGNORECASE FINDBYAGEISNULL FINDBYAGEISNOTNULL
 
-%type <str> query condition comparison
+%type<str> query condition comparison
 
 %left AND
 %left OR
@@ -28,25 +30,43 @@ extern int yylex();
 %%
 
 query:
-    FINDALL LPAREN RPAREN { printf("SELECT * FROM table;\n"); }
-    | FINDBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s;\n", $4); }
-    | FINDALLBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s;\n", $4); }
-    | FINDFIRSTBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s ORDER BY %s ASC LIMIT 1;\n", $4, $2); }
-    | FINDLASTBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s ORDER BY %s DESC LIMIT 1;\n", $4, $2); }
-    | FINDTOPBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s ORDER BY %s DESC LIMIT 1;\n", $4, $2); }
-    | FINDDISTINCTBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT DISTINCT * FROM table WHERE %s;\n", $4); }
-;
+  | FINDBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s;\n", $4); }
+  | FINDALLBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s;\n", $4); }
+  | FINDFIRSTBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s ORDER BY %s ASC LIMIT 1;\n", $4, $2); }
+  | FINDLASTBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s ORDER BY %s DESC LIMIT 1;\n", $4, $2); }
+  | FINDTOPBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s ORDER BY %s DESC LIMIT 1;\n", $4, $2); }
+  | FINDDISTINCTBY IDENTIFIER LPAREN condition RPAREN { printf("SELECT DISTINCT * FROM table WHERE %s;\n", $4); }
+  | FINDBYLASTNAMEANDFIRSTNAME IDENTIFIER LPAREN condition RPAREN IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s AND %s;\n", $4, $8); }
+  | FINDBYLASTNAMEORFIRSTNAME IDENTIFIER LPAREN condition RPAREN IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE %s OR %s;\n", $4, $8); }
+  | FINDDISTINCTBYLASTNAMEANDFIRSTNAME IDENTIFIER LPAREN condition RPAREN IDENTIFIER LPAREN condition RPAREN { printf("SELECT DISTINCT * FROM table WHERE %s AND %s;\n", $4, $8); }
+  | FINDBYSTARTDATEBETWEEN IDENTIFIER LPAREN condition RPAREN IDENTIFIER LPAREN condition RPAREN { printf("SELECT * FROM table WHERE table.startDate between %s AND %s;\n", $4, $8); }
+  | FINDBYSTARTDATEAFTER STRING { printf("SELECT * FROM table WHERE table.startDate > %s;\n", $2); }
+  | FINDBYSTARTDATEBEFORE STRING { printf("SELECT * FROM table WHERE table.startDate < %s;\n", $2); }
+  | FINDBYFIRSTNAMELIKE STRING { printf("SELECT * FROM table WHERE table.firstName LIKE %s;\n", $2); }
+  | FINDBYFIRSTNAMENOTLIKE STRING { printf("SELECT * FROM table WHERE table.firstName NOT LIKE %s;\n", $2); }
+  | FINDBYFIRSTNAMESTARTINGWITH STRING { printf("SELECT * FROM table WHERE table.firstName LIKE %s;\n", $2); }
+  | FINDBYFIRSTNAMEENDINGWITH STRING { printf("SELECT * FROM table WHERE table.firstName LIKE %s;\n", $2); }
+  | FINDBYFIRSTNAMECONTAINING STRING { printf("SELECT * FROM table WHERE table.firstName LIKE %s;\n", $2); }
+  | FINDBYAGEORDERBYLASTNAMEDESC NUMBER { printf("SELECT * FROM table WHERE table.age = %d ORDER BY table.lastName DESC;\n", $2); }
+  | FINDBYLASTNAMENOT STRING { printf("SELECT * FROM table WHERE table.lastname != %s;\n", $2); }
+  | FINDBYAGEIN STRING { printf("SELECT * FROM table WHERE table.age IN (%s);\n", $2); }
+  | FINDBYAGENOTIN STRING { printf("SELECT * FROM table WHERE table.age NOT IN (%s);\n", $2); }
+  | FINDBYACTIVETRUE { printf("SELECT * FROM table WHERE table.active = true;\n"); }
+  | FINDBYACTIVEFALSE { printf("SELECT * FROM table WHERE table.active = false;\n"); }
+  | FINDBYFIRSTNAMEIGNORECASE STRING { printf("SELECT * FROM table WHERE UPPER(table.firstName) = UPPER(%s);\n"); }
+  | FINDBYAGEISNULL { printf("SELECT * FROM table WHERE table.age IS NULL;\n"); }
+  | FINDBYAGEISNOTNULL { printf("SELECT * FROM table WHERE table.age IS NOT NULL;\n"); } 
+  ;
 
 condition:
-    IDENTIFIER comparison NUMBER {
+    IDENTIFIER comparison NUMBER { 
         char buf[256];
         snprintf(buf, sizeof(buf), "%s %s %d", $1, $2, $3);
         $$ = strdup(buf);
     }
-    | IDENTIFIER comparison STRING {
-        // Remove quotes around the string
-        $3[strlen($3) - 1] = '\0';  // remove trailing "
-        char* value = $3 + 1;  // skip leading "
+    | IDENTIFIER comparison STRING { 
+        $3[strlen($3) - 1] = '\0';  
+        char* value = $3 + 1;
         char buf[256];
         snprintf(buf, sizeof(buf), "%s %s '%s'", $1, $2, value);
         $$ = strdup(buf);
@@ -111,6 +131,31 @@ condition:
         snprintf(buf, sizeof(buf), "%s OR %s", $1, $3);
         $$ = strdup(buf);
     }
+    | IDENTIFIER IN LPAREN condition RPAREN {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "%s IN (%s)", $1, $4);
+        $$ = strdup(buf);
+    }
+    | IDENTIFIER NOTIN LPAREN condition RPAREN {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "%s NOT IN (%s)", $1, $4);
+        $$ = strdup(buf);
+    }
+    | IDENTIFIER AFTER STRING {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "%s > '%s'", $1, $3);
+        $$ = strdup(buf);
+    }
+    | IDENTIFIER BEFORE STRING {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "%s < '%s'", $1, $3);
+        $$ = strdup(buf);
+    }
+    | IDENTIFIER IGNORECASE EQUALS STRING {
+        char buf[256];
+        snprintf(buf, sizeof(buf), "UPPER(%s) = UPPER('%s')", $1, $4);
+        $$ = strdup(buf);
+    }
 ;
 
 comparison:
@@ -120,16 +165,16 @@ comparison:
     | LESS { $$ = strdup("<"); }
     | GREATEREQ { $$ = strdup(">="); }
     | LESSEQ { $$ = strdup("<="); }
-;
+    ;
 
 %%
-
-void yyerror(const char *s) {
+void yyerror(const char *s)
+{
     fprintf(stderr, "Error: %s\n", s);
 }
 
-int main(void) {
+int main(void)
+{
     yyparse();
     return 0;
 }
-
